@@ -68,8 +68,8 @@ Particle sample(double R, double r, double G, double M, double mass, double radi
     p.y = (R + radius * cos(phi)) * sin(theta);
     p.z = radius * sin(phi);
     double v_norm = std::sqrt(G * M / R);
-    v.x = - v_norm * (cos(theta) + 0.01 * dist(gen));
-    v.y = v_norm * (sin(theta) + 0.01 * dist(gen));
+    v.x = - v_norm * (cos(theta) + 0.01 * (dist(gen) - 0.5));
+    v.y = v_norm * (sin(theta) + 0.01 * (dist(gen) - 0.5));
     v.z = v_norm * 0.02 * (dist(gen) - 0.5);
 
     Particle ans(p, v, mass, radi);
@@ -105,6 +105,7 @@ public:
         p1.position = p1.position * r1 + p2.position * r2;
         p1.velocity = p1.velocity * r1 + p2.velocity * r2;
         p1.radius = pow(pow(p1.radius, 3) + pow(p2.radius, 3), 1.0/3);
+        p1.acceleration = p1.acceleration * r1 + p2.acceleration * r2;
         p1.mass = m1 + m2;
         p2 = particles[index - 1];
         index -= 1;
@@ -211,8 +212,8 @@ int main() {
     const int N = 1000;  // 质点数量
     const double G = 1;  // 万有引力常数
     const double softening = 1.0;  // 软化长度
-    const double dt = 0.1;  // 时间步长
-    const int steps = 100000;  // 模拟步数
+    const double dt = 1;  // 时间步长
+    const int steps = 1000000;  // 模拟步数
     // const double box_size = 100.0;  // 初始分布区域大小
     const double M = 1000;
     const double R = 10000;
@@ -231,14 +232,14 @@ int main() {
         // Vec3 vel(0, 
         //         0, 
         //         0);
-        double mass = randomDouble(0.1, 0.2);
+        double mass = randomDouble(0.01, 0.02);
         double radius = randomDouble(1.0, 5.0);
         
         system.addParticle(sample(R, r, G, M, mass, radius));
     }
     
     // 打开输出文件
-    std::ofstream outfile("trajectories.txt");
+    std::ofstream outfile("trajectories_a.txt");
     
     // 开始计时
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -274,7 +275,7 @@ int main() {
 
     outfile.close();
     
-    std::cout << "Trajectories saved to trajectories.txt\n";
+    std::cout << "Trajectories saved to trajectories_a.txt\n";
     
     return 0;
 }

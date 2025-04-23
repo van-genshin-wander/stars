@@ -3,20 +3,24 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 import time
+from tqdm import tqdm
 
-def read_trajectories(filename):
+def read_trajectories(filename, delta):
     """
     读取轨迹文件，返回时间点和天体数据
     """
     bodies_data = []
     with open(filename, 'r') as file:
-        for line in file:
+        for i, line in enumerate(file):
+            if not i % delta == 0: continue
             bodies = []
             for body_str in line.strip().split(';'):
                 if body_str:
                     try:
                         x, y, z, r = map(float, body_str.split(','))
-                        bodies.append({'position': np.array([x, y, z]), 'radius': r})
+                        pos = np.array([x, y, z])
+                        if np.linalg.norm(pos) > 3 * 1e4: continue
+                        bodies.append({'position': pos, 'radius': r})
                     except:
                         print(f"警告: 跳过格式错误的数据: {body_str}")
                         continue
@@ -66,19 +70,26 @@ def generate_gif(bodies_data, output_filename='trajectories.gif', fps=20, dpi=10
             pos = body['position']
             radius = body['radius']
             scatters[i]._offsets3d = ([pos[0]], [pos[1]], [pos[2]])
-            scatters[i].set_sizes([radius * 20])
+            scatters[i].set_sizes([radius * 5])
         
         ax.set_title(f'Frame: {frame+1}/{len(bodies_data)}')
         return scatters
 
+    # 创建进度条包装器
+    def update_with_progress(frame):
+        update(frame)
+        pbar.update(1)
+        return scatters
+
     # 生成动画（不显示窗口）
-    ani = FuncAnimation(
-        fig, update, frames=len(bodies_data),
-        init_func=init, blit=False
-    )
-    
-    # 直接保存GIF
-    ani.save(output_filename, writer='pillow', fps=fps, dpi=dpi)
+    with tqdm(total=len(bodies_data), desc="生成GIF进度") as pbar:
+        ani = FuncAnimation(
+            fig, update_with_progress, frames=len(bodies_data),
+            init_func=init, blit=False
+        )
+        
+        # 直接保存GIF
+        ani.save(output_filename, writer='pillow', fps=fps, dpi=dpi)
     plt.close()  # 关闭图形释放内存
     print(f"GIF已保存至: {output_filename}")
 
@@ -86,7 +97,7 @@ if __name__ == "__main__":
     t1 = time.time()
     # 读取数据
     filename = "trajectories.txt"
-    bodies_data = read_trajectories(filename)
+    bodies_data = read_trajectories(filename, delta=1000)[:500]
     
     # 检查数据
     print(f"总帧数: {len(bodies_data)}")
@@ -94,7 +105,7 @@ if __name__ == "__main__":
         print(f"每帧天体数: {len(bodies_data[0])}")
 
     # 采样数据（可选）
-    bodies_data = [bodies_data[50 * k] for k in range(1000)]  # 示例采样
+    # bodies_data = [bodies_data[100 * k] for k in range(10000)]  # 示例采样
     
     # 直接生成GIF
     generate_gif(bodies_data, output_filename='trajectories.gif', fps=20, dpi=100)
