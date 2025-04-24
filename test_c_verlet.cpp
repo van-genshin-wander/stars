@@ -68,8 +68,8 @@ Particle sample(double R, double r, double G, double M, double mass, double radi
     p.y = (R + radius * cos(phi)) * sin(theta);
     p.z = radius * sin(phi);
     double v_norm = std::sqrt(G * M / R);
-    v.x = - v_norm * (cos(theta) + 0.01 * (dist(gen) - 0.5));
-    v.y = v_norm * (sin(theta) + 0.01 * (dist(gen) - 0.5));
+    v.x = - v_norm * (sin(theta) + 0.01 * (dist(gen) - 0.5));
+    v.y = v_norm * (cos(theta) + 0.01 * (dist(gen) - 0.5));
     v.z = v_norm * 0.02 * (dist(gen) - 0.5);
 
     Particle ans(p, v, mass, radi);
